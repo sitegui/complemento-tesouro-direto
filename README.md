@@ -32,3 +32,5 @@ Execute `python -m complemento_tesouro_direto.limpar_dados`
 Para entender as entranhas do tesouro direto, vou assumir um investimento num período do passado, assim posso usar os
 valores reais para entender a estratégia usada.
 
+IPCA+ vencendo em 2020-08-15
+investimento inicial de 100 000 em 
