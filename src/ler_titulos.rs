@@ -131,7 +131,7 @@ where
     let texto = String::deserialize(deserializer)?;
     let valor = texto
         .replace(',', ".")
-        .parse::<f32>()
+        .parse::<f64>()
         .with_context(|| format!("não pude ler o decimal '{}'", texto))
         .map_err(Error::custom)?;
 

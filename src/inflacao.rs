@@ -7,7 +7,7 @@ use std::io::ErrorKind;
 
 #[derive(Debug, Clone)]
 pub struct Inflacao {
-    valores: SerieTemporal<Decimal<2>>,
+    indices: SerieTemporal<Decimal<2>>,
 }
 
 impl Inflacao {
@@ -41,14 +41,14 @@ impl Inflacao {
                 let mes = elemento.mes[4..6].parse::<u32>().unwrap();
                 let dia = NaiveDate::from_ymd_opt(ano, mes, 1).unwrap();
 
-                let indice = Decimal::new(elemento.indice.parse::<f32>().unwrap());
+                let indice = Decimal::new(elemento.indice.parse::<f64>().unwrap());
 
                 (dia, indice)
             })
             .collect();
 
         Inflacao {
-            valores: SerieTemporal::new(valores),
+            indices: SerieTemporal::new(valores),
         }
     }
 
@@ -59,16 +59,28 @@ impl Inflacao {
             Err(erro) if erro.kind() == ErrorKind::NotFound => {
                 let inflacao = Inflacao::baixar();
 
-                fs::write(cache, serde_json::to_string(&inflacao.valores).unwrap()).unwrap();
+                fs::write(cache, serde_json::to_string(&inflacao.indices).unwrap()).unwrap();
 
                 inflacao
             }
             Ok(cacheado) => Inflacao {
-                valores: serde_json::from_str(&cacheado).unwrap(),
+                indices: serde_json::from_str(&cacheado).unwrap(),
             },
             Err(erro) => {
                 panic!("erro ao ler cache: {}", erro);
             }
         }
+    }
+
+    pub fn corrigir<const N: u8>(
+        &self,
+        valor: Decimal<N>,
+        de: NaiveDate,
+        para: NaiveDate,
+    ) -> Decimal<N> {
+        let indice_a = self.indices.valor_atual(de).unwrap().as_float();
+        let indice_b = self.indices.valor_atual(para).unwrap().as_float();
+
+        valor * (indice_b / indice_a)
     }
 }
