@@ -1,6 +1,7 @@
 use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SerieTemporal<T> {
     valores: Vec<(NaiveDate, T)>,
 }

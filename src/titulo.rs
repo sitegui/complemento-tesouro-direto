@@ -4,15 +4,15 @@ use chrono::NaiveDate;
 
 #[derive(Debug, Clone)]
 pub struct Titulo {
-    vencimento: NaiveDate,
+    pub vencimento: NaiveDate,
     /// Inclusivo
-    inicio_dado: NaiveDate,
+    pub inicio_dado: NaiveDate,
     /// Exclusivo
-    fim_dado: NaiveDate,
-    preco_venda: SerieTemporal<Decimal<2>>,
-    preco_compra: SerieTemporal<Decimal<2>>,
-    cupom: SerieTemporal<Decimal<6>>,
-    preco_vencimento: Option<Decimal<6>>,
+    pub fim_dado: NaiveDate,
+    pub preco_venda: SerieTemporal<Decimal<2>>,
+    pub preco_compra: SerieTemporal<Decimal<2>>,
+    pub cupom: SerieTemporal<Decimal<6>>,
+    pub preco_vencimento: Option<Decimal<6>>,
 }
 
 #[derive(Debug, Clone)]
