@@ -24,6 +24,7 @@ Os objetivos são:
 Baixe os dados do site oficial do tesouro direto numa pasta `dados`:
 - [Taxas dos Títulos Ofertados pelo Tesouro Direto](http://www.tesourotransparente.gov.br/ckan/dataset/taxas-dos-titulos-ofertados-pelo-tesouro-direto/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1)
 - [Pagamento de Cupom de Juros do Tesouro Direto](http://www.tesourotransparente.gov.br/ckan/dataset/resgates-do-tesouro-direto/resource/de2af5cf-9dbd-4566-b933-da6871cce030)
+- [Vencimentos do Tesouro Direto](http://www.tesourotransparente.gov.br/ckan/dataset/resgates-do-tesouro-direto/resource/9180ec46-5d73-49ab-bd26-f16e2b323f74)
 
 Execute `python -m complemento_tesouro_direto.limpar_dados`
 

@@ -1,2 +1,6 @@
 /dados
 /.idea
+
+# Added by cargo
+
+/target
