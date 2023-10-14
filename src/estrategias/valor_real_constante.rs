@@ -39,8 +39,8 @@ impl<'a> Estrategia for ValorRealConstante<'a> {
         let tentar_venda = |venda_real: Decimal<2>| {
             let mut fluxo = fluxo.clone();
 
-            for indice in 0..num_vendas {
-                let dia_venda = dia_inicio + periodo * indice as i32;
+            for indice in 1..=num_vendas {
+                let dia_venda = dia_inicio + self.frequencia_venda * indice as i32;
                 let venda = self.inflacao.corrigir(venda_real, dia_inicio, dia_venda);
                 let resultado =
                     fluxo.vender_a_partir_de(dia_venda, QuantidadeOuValor::Valor(venda));

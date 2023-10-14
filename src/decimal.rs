@@ -45,7 +45,7 @@ impl<const N: u8> Div<f64> for Decimal<N> {
     type Output = Self;
 
     fn div(self, rhs: f64) -> Self::Output {
-        Decimal((self.0 as f64 / rhs).round() as i64)
+        Decimal((self.0 as f64 / rhs).floor() as i64)
     }
 }
 

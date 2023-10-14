@@ -23,7 +23,7 @@ mod tipo_titulo;
 mod titulo;
 
 fn main() -> Result<()> {
-    let tempo_minimo = Duration::days(365 * 10);
+    let tempo_minimo = Duration::days(365 * 2);
     let valor_inicio = Decimal::<2>::new(100_000.0);
 
     let inflacao = Inflacao::baixar_com_cache();
@@ -32,29 +32,35 @@ fn main() -> Result<()> {
     let titulos = titulos_com_dados_suficientes(&titulos, tempo_minimo);
 
     let estrategias: Vec<Box<dyn Estrategia>> = vec![
-        Box::new(QuantidadeConstante::new(Duration::days(15))),
         Box::new(QuantidadeConstante::new(Duration::days(30))),
-        Box::new(QuantidadeConstante::new(Duration::days(90))),
         Box::new(QuantidadeConstante::new(Duration::days(180))),
-        Box::new(ValorRealConstante::new(&inflacao, Duration::days(15))),
         Box::new(ValorRealConstante::new(&inflacao, Duration::days(30))),
-        Box::new(ValorRealConstante::new(&inflacao, Duration::days(90))),
         Box::new(ValorRealConstante::new(&inflacao, Duration::days(180))),
     ];
 
     for titulo in titulos {
         println!(
-            "{}: {} a {}",
-            titulo.vencimento, titulo.inicio_dado, titulo.fim_dado
+            "{:?} {}: {} a {}",
+            titulo.tipo, titulo.vencimento, titulo.inicio_dado, titulo.fim_dado
         );
 
-        testar_estrategias(
+        let resultados = testar_estrategias(
             titulo,
             titulo.inicio_dado,
             valor_inicio,
             tempo_minimo,
             &estrategias,
         )?;
+
+        for (nome, fluxo) in resultados {
+            println!("{}", nome);
+            for evento in fluxo.eventos() {
+                println!(
+                    "{} {:?} {} {}",
+                    evento.dia, evento.tipo, evento.valor, evento.saldo_quantidade
+                );
+            }
+        }
     }
 
     Ok(())

@@ -14,12 +14,12 @@ pub struct FluxoInvestimento<'a> {
 
 #[derive(Debug, Clone)]
 pub struct EventoInvestimento {
-    dia: NaiveDate,
-    tipo: TipoEvento,
-    valor: Decimal<2>,
-    quantidade: Decimal<2>,
-    preco: Decimal<6>,
-    saldo_quantidade: Decimal<2>,
+    pub dia: NaiveDate,
+    pub tipo: TipoEvento,
+    pub valor: Decimal<2>,
+    pub quantidade: Decimal<2>,
+    pub preco: Decimal<6>,
+    pub saldo_quantidade: Decimal<2>,
 }
 
 #[derive(Debug, Clone)]
