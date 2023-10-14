@@ -1,8 +1,10 @@
 use crate::decimal::Decimal;
+use crate::impostos_e_taxas::{ImpostosETaxas, SaldoAtivo};
 use crate::quantidade_ou_valor::QuantidadeOuValor;
 use crate::titulo::Titulo;
 use anyhow::{ensure, Context, Result};
 use chrono::{Days, NaiveDate};
+use std::collections::VecDeque;
 
 #[derive(Debug, Clone)]
 pub struct FluxoInvestimento<'a> {
@@ -10,16 +12,19 @@ pub struct FluxoInvestimento<'a> {
     ultimo_dia: Option<NaiveDate>,
     saldo_quantidade: Decimal<2>,
     eventos: Vec<EventoInvestimento>,
+    saldos_ativos: VecDeque<SaldoAtivo>,
 }
 
 #[derive(Debug, Clone)]
 pub struct EventoInvestimento {
     pub dia: NaiveDate,
     pub tipo: TipoEvento,
-    pub valor: Decimal<2>,
+    pub valor_bruto: Decimal<2>,
     pub quantidade: Decimal<2>,
     pub preco: Decimal<6>,
     pub saldo_quantidade: Decimal<2>,
+    pub impostos_e_taxas: ImpostosETaxas,
+    pub valor_liquido: Decimal<2>,
 }
 
 #[derive(Debug, Clone)]
@@ -36,6 +41,7 @@ impl<'a> FluxoInvestimento<'a> {
             ultimo_dia: None,
             saldo_quantidade: Decimal::zero(),
             eventos: Default::default(),
+            saldos_ativos: VecDeque::new(),
         }
     }
 
@@ -59,10 +65,17 @@ impl<'a> FluxoInvestimento<'a> {
         self.eventos.push(EventoInvestimento {
             dia,
             tipo: TipoEvento::Compra,
-            valor,
+            valor_bruto: valor,
             quantidade,
             preco: preco.as_decimal(),
             saldo_quantidade: self.saldo_quantidade,
+            impostos_e_taxas: ImpostosETaxas::zero(),
+            valor_liquido: valor,
+        });
+        self.saldos_ativos.push_front(SaldoAtivo {
+            dia,
+            preco_original: preco,
+            quantidade,
         });
 
         Ok(())
@@ -86,13 +99,42 @@ impl<'a> FluxoInvestimento<'a> {
         let (quantidade, valor) = qv.quantidade_e_valor(preco);
         ensure!(self.saldo_quantidade >= quantidade);
         self.saldo_quantidade -= quantidade;
+
+        // Encontra os saldos que foram resgatados
+        let mut resgastes = vec![];
+        let mut quantidade_restante = quantidade;
+        while quantidade_restante > Decimal::zero() {
+            let saldo_ativo = self
+                .saldos_ativos
+                .pop_back()
+                .context("precisa haver pelo menos um saldo ativo")?;
+
+            let resgate = if saldo_ativo.quantidade > quantidade_restante {
+                // Resgaste parcial
+                self.saldos_ativos.push_back(
+                    saldo_ativo.com_quantidade(saldo_ativo.quantidade - quantidade_restante),
+                );
+                saldo_ativo.com_quantidade(quantidade_restante)
+            } else {
+                saldo_ativo
+            };
+
+            resgastes.push(resgate);
+
+            quantidade_restante -= resgate.quantidade;
+        }
+
+        let impostos_e_taxas = ImpostosETaxas::calcular_para_resgaste(&resgastes, preco, dia);
+
         self.eventos.push(EventoInvestimento {
             dia,
             tipo: TipoEvento::Venda,
-            valor,
+            valor_bruto: valor,
             quantidade,
             preco: preco.as_decimal(),
             saldo_quantidade: self.saldo_quantidade,
+            impostos_e_taxas,
+            valor_liquido: valor - impostos_e_taxas.total(),
         });
 
         Ok(())
@@ -108,13 +150,21 @@ impl<'a> FluxoInvestimento<'a> {
                 }
 
                 let valor = self.saldo_quantidade * preco;
+                let impostos_e_taxas = ImpostosETaxas::calcular_para_cupom(
+                    self.saldos_ativos.make_contiguous(),
+                    preco,
+                    dia,
+                );
+
                 self.eventos.push(EventoInvestimento {
                     dia,
                     tipo: TipoEvento::Cupom,
-                    valor,
+                    valor_bruto: valor,
                     quantidade: self.saldo_quantidade,
                     preco,
                     saldo_quantidade: self.saldo_quantidade,
+                    impostos_e_taxas,
+                    valor_liquido: valor - impostos_e_taxas.total(),
                 });
             }
 

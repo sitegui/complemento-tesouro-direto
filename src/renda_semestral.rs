@@ -24,7 +24,7 @@ impl RendaReal {
                 TipoEvento::Compra => {}
                 TipoEvento::Venda | TipoEvento::Cupom => {
                     let semestre = (evento.dia - inicio).num_days() / 180;
-                    let renda_real = inflacao.corrigir(evento.valor, evento.dia, inicio);
+                    let renda_real = inflacao.corrigir(evento.valor_bruto, evento.dia, inicio);
                     semestres[semestre as usize] += renda_real;
                 }
             }

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use std::ops::{Add, AddAssign, Div, Mul, SubAssign};
+use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Copy, Serialize, Deserialize)]
 pub struct Decimal<const N: u8>(i64);
@@ -68,6 +68,14 @@ impl<const N: u8> Add for Decimal<N> {
 impl<const N: u8> AddAssign for Decimal<N> {
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0;
+    }
+}
+
+impl<const N: u8> Sub for Decimal<N> {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Decimal(self.0 - rhs.0)
     }
 }
 

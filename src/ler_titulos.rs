@@ -101,8 +101,6 @@ fn ler_vencimentos(titulos: &mut Titulos) {
         tipo: TipoTitulo,
         #[serde(rename = "Vencimento do Titulo", deserialize_with = "ler_dia")]
         vencimento: NaiveDate,
-        #[serde(rename = "Data Resgate", deserialize_with = "ler_dia")]
-        dia: NaiveDate,
         #[serde(rename = "PU", deserialize_with = "ler_decimal")]
         preco_vencimento: Decimal<6>,
     }

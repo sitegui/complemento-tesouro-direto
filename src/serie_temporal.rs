@@ -27,13 +27,6 @@ impl<T: Copy> SerieTemporal<T> {
         }
     }
 
-    pub fn valor(&self, dia: NaiveDate) -> Option<T> {
-        self.valores
-            .binary_search_by_key(&dia, |&(dia, _)| dia)
-            .ok()
-            .map(|index| self.valores[index].1)
-    }
-
     pub fn iter_comecando_em(
         &self,
         minimo: NaiveDate,

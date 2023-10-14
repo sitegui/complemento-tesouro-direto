@@ -23,6 +23,7 @@ mod renda_semestral;
 mod serie_temporal;
 mod tipo_titulo;
 mod titulo;
+mod impostos_e_taxas;
 
 fn main() -> Result<()> {
     let tempo_minimo = Duration::days(365 * 2);
@@ -61,7 +62,7 @@ fn main() -> Result<()> {
             for evento in fluxo.eventos() {
                 println!(
                     "{} {:?} {} {}",
-                    evento.dia, evento.tipo, evento.valor, evento.saldo_quantidade
+                    evento.dia, evento.tipo, evento.valor_bruto, evento.saldo_quantidade
                 );
             }
 
