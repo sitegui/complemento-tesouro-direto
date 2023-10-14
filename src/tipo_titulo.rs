@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Hash, Eq, PartialEq)]
 pub enum TipoTitulo {
@@ -32,5 +33,22 @@ impl TipoTitulo {
             | TipoTitulo::RendaAposentadoriaExtra
             | TipoTitulo::Selic => false,
         }
+    }
+}
+
+impl Display for TipoTitulo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let texto = match self {
+            TipoTitulo::Educa => "Educa+",
+            TipoTitulo::IgpmComJurosSemestrais => "IGPM+ com Juros Semestrais",
+            TipoTitulo::Ipca => "IPCA+",
+            TipoTitulo::IpcaComJurosSemestrais => "IPCA+ com Juros Semestrais",
+            TipoTitulo::Prefixado => "Prefixado",
+            TipoTitulo::PrefixadoComJurosSemestrais => "Prefixado com Juros Semestrais",
+            TipoTitulo::RendaAposentadoriaExtra => "Renda+ Aposentadoria Extra",
+            TipoTitulo::Selic => "Selic",
+        };
+
+        f.write_str(texto)
     }
 }
