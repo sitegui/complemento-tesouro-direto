@@ -18,7 +18,7 @@ if __name__ == '__main__':
         'PU Compra Manha': 'preco_unitario_compra',
         'PU Venda Manha': 'preco_unitario_venda',
         'PU Base Manha': 'preco_unitario_base',
-    }).to_pickle('dados/precos.pkl.zip')
+    }).query('preco_unitario_venda > 0').to_pickle('dados/precos.pkl.zip')
 
     pandas.read_csv(
         'dados/CupomJurosTesouroDireto.csv',
@@ -34,3 +34,18 @@ if __name__ == '__main__':
         'Quantidade': 'quantidade',
         'Valor': 'total',
     }).to_pickle('dados/cupons.pkl.zip')
+
+    pandas.read_csv(
+        'dados/VencimentosTesouroDireto.csv',
+        sep=';',
+        parse_dates=['Vencimento do Titulo', 'Data Resgate'],
+        dayfirst=True,
+        decimal=',',
+    ).rename(columns={
+        'Tipo Titulo': 'tipo',
+        'Vencimento do Titulo': 'vencimento',
+        'Data Resgate': 'dia',
+        'PU': 'preco_unitario',
+        'Quantidade': 'quantidade',
+        'Valor': 'total',
+    }).to_pickle('dados/vencimentos.pkl.zip')
