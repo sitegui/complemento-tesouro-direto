@@ -12,16 +12,16 @@ mod inflacao;
 mod ler_titulos;
 mod quantidade_ou_valor;
 mod serie_temporal;
+mod tipo_titulo;
 mod titulo;
 
 fn main() {
-    let tipo = "Tesouro IPCA+ com Juros Semestrais";
     let tempo_minimo = Duration::days(365 * 10);
     let valor_inicio = Decimal::<2>::new(100_000.0);
     let num_meses = 12 * 10;
 
     let inflacao = Inflacao::baixar_com_cache();
-    let titulos = ler_titulos(tipo);
+    let titulos = ler_titulos();
 
     let titulos = titulos_com_dados_suficientes(&titulos, tempo_minimo);
 

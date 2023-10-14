@@ -1,4 +1,5 @@
 use crate::decimal::Decimal;
+use crate::tipo_titulo::TipoTitulo;
 use crate::titulo::{Titulo, TituloBuilder};
 use anyhow::Context;
 use chrono::NaiveDate;
@@ -7,21 +8,36 @@ use serde::de::Error;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 
-pub fn ler_titulos(tipo: &str) -> Vec<Titulo> {
-    let mut titulos = HashMap::new();
+pub fn ler_titulos() -> Vec<Titulo> {
+    let mut titulos = Titulos::default();
 
-    ler_precos(tipo, &mut titulos);
-    ler_cupons(tipo, &mut titulos);
-    ler_vencimentos(tipo, &mut titulos);
+    ler_precos(&mut titulos);
+    ler_cupons(&mut titulos);
+    ler_vencimentos(&mut titulos);
 
-    titulos.into_values().map(|titulo| titulo.build()).collect()
+    titulos.build()
 }
 
-fn ler_precos(tipo: &str, titulos: &mut HashMap<NaiveDate, TituloBuilder>) {
+#[derive(Debug, Default)]
+struct Titulos(HashMap<(TipoTitulo, NaiveDate), TituloBuilder>);
+
+impl Titulos {
+    fn get_mut(&mut self, tipo: TipoTitulo, vencimento: NaiveDate) -> &mut TituloBuilder {
+        self.0
+            .entry((tipo, vencimento))
+            .or_insert_with(|| TituloBuilder::new(tipo, vencimento))
+    }
+
+    fn build(self) -> Vec<Titulo> {
+        self.0.into_values().map(|titulo| titulo.build()).collect()
+    }
+}
+
+fn ler_precos(titulos: &mut Titulos) {
     #[derive(Debug, Deserialize)]
     struct Linha {
         #[serde(rename = "Tipo Titulo")]
-        tipo: String,
+        tipo: TipoTitulo,
         #[serde(rename = "Data Vencimento", deserialize_with = "ler_dia")]
         vencimento: NaiveDate,
         #[serde(rename = "Data Base", deserialize_with = "ler_dia")]
@@ -40,26 +56,22 @@ fn ler_precos(tipo: &str, titulos: &mut HashMap<NaiveDate, TituloBuilder>) {
     for linha in leitor.deserialize::<Linha>() {
         let linha = linha.unwrap();
 
-        if linha.tipo == tipo {
-            let titulo = titulos
-                .entry(linha.vencimento)
-                .or_insert_with(|| TituloBuilder::new(linha.vencimento));
+        let titulo = titulos.get_mut(linha.tipo, linha.vencimento);
 
-            if linha.preco_compra > Decimal::zero() {
-                titulo.adicionar_preco_compra(linha.dia, linha.preco_compra);
-            }
-            if linha.preco_venda > Decimal::zero() {
-                titulo.adicionar_preco_venda(linha.dia, linha.preco_venda);
-            }
+        if linha.preco_compra > Decimal::zero() {
+            titulo.adicionar_preco_compra(linha.dia, linha.preco_compra);
+        }
+        if linha.preco_venda > Decimal::zero() {
+            titulo.adicionar_preco_venda(linha.dia, linha.preco_venda);
         }
     }
 }
 
-fn ler_cupons(tipo: &str, titulos: &mut HashMap<NaiveDate, TituloBuilder>) {
+fn ler_cupons(titulos: &mut Titulos) {
     #[derive(Debug, Deserialize)]
     struct Linha {
         #[serde(rename = "Tipo Titulo")]
-        tipo: String,
+        tipo: TipoTitulo,
         #[serde(rename = "Vencimento do Titulo", deserialize_with = "ler_dia")]
         vencimento: NaiveDate,
         #[serde(rename = "Data Resgate", deserialize_with = "ler_dia")]
@@ -76,20 +88,17 @@ fn ler_cupons(tipo: &str, titulos: &mut HashMap<NaiveDate, TituloBuilder>) {
     for linha in leitor.deserialize::<Linha>() {
         let linha = linha.unwrap();
 
-        if linha.tipo == tipo {
-            titulos
-                .entry(linha.vencimento)
-                .or_insert_with(|| TituloBuilder::new(linha.vencimento))
-                .adicionar_cupom(linha.dia, linha.cupom);
-        }
+        titulos
+            .get_mut(linha.tipo, linha.vencimento)
+            .adicionar_cupom(linha.dia, linha.cupom);
     }
 }
 
-fn ler_vencimentos(tipo: &str, titulos: &mut HashMap<NaiveDate, TituloBuilder>) {
+fn ler_vencimentos(titulos: &mut Titulos) {
     #[derive(Debug, Deserialize)]
     struct Linha {
         #[serde(rename = "Tipo Titulo")]
-        tipo: String,
+        tipo: TipoTitulo,
         #[serde(rename = "Vencimento do Titulo", deserialize_with = "ler_dia")]
         vencimento: NaiveDate,
         #[serde(rename = "Data Resgate", deserialize_with = "ler_dia")]
@@ -106,12 +115,9 @@ fn ler_vencimentos(tipo: &str, titulos: &mut HashMap<NaiveDate, TituloBuilder>) 
     for linha in leitor.deserialize::<Linha>() {
         let linha = linha.unwrap();
 
-        if linha.tipo == tipo {
-            titulos
-                .entry(linha.vencimento)
-                .or_insert_with(|| TituloBuilder::new(linha.vencimento))
-                .set_preco_vencimento(linha.preco_vencimento);
-        }
+        titulos
+            .get_mut(linha.tipo, linha.vencimento)
+            .set_preco_vencimento(linha.preco_vencimento);
     }
 }
 
