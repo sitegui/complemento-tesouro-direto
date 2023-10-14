@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use std::ops::{AddAssign, Div, Mul, SubAssign};
+use std::ops::{Add, AddAssign, Div, Mul, SubAssign};
 
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Copy, Serialize, Deserialize)]
 pub struct Decimal<const N: u8>(i64);
@@ -54,6 +54,14 @@ impl<const N: u8, const M: u8> Div<Decimal<M>> for Decimal<N> {
 
     fn div(self, rhs: Decimal<M>) -> Self::Output {
         self / rhs.as_float()
+    }
+}
+
+impl<const N: u8> Add for Decimal<N> {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Decimal(self.0 + rhs.0)
     }
 }
 

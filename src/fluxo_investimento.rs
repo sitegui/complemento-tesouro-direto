@@ -128,6 +128,14 @@ impl<'a> FluxoInvestimento<'a> {
         self.saldo_quantidade
     }
 
+    pub fn saldo_valor(&self, dia: NaiveDate) -> Decimal<2> {
+        self.titulo
+            .preco_venda
+            .valor_atual(dia)
+            .expect("o título não pode ser vendido antes de existir")
+            * self.saldo_quantidade
+    }
+
     pub fn eventos(&self) -> &[EventoInvestimento] {
         &self.eventos
     }

@@ -1,9 +1,16 @@
 use crate::decimal::Decimal;
-use crate::estrategias::venda_continua::venda_continua;
+use crate::estrategias::quantidade_constante::QuantidadeConstante;
+use crate::estrategias::valor_real_constante::ValorRealConstante;
+use crate::estrategias::Estrategia;
+use crate::fluxo_investimento::FluxoInvestimento;
 use crate::inflacao::Inflacao;
 use crate::ler_titulos::ler_titulos;
+use crate::quantidade_ou_valor::QuantidadeOuValor;
 use crate::titulo::Titulo;
+use anyhow::Context;
+use anyhow::Result;
 use chrono::{Duration, NaiveDate};
+use std::collections::HashMap;
 
 mod decimal;
 mod estrategias;
@@ -15,15 +22,25 @@ mod serie_temporal;
 mod tipo_titulo;
 mod titulo;
 
-fn main() {
+fn main() -> Result<()> {
     let tempo_minimo = Duration::days(365 * 10);
     let valor_inicio = Decimal::<2>::new(100_000.0);
-    let num_meses = 12 * 10;
 
     let inflacao = Inflacao::baixar_com_cache();
     let titulos = ler_titulos();
 
     let titulos = titulos_com_dados_suficientes(&titulos, tempo_minimo);
+
+    let estrategias: Vec<Box<dyn Estrategia>> = vec![
+        Box::new(QuantidadeConstante::new(Duration::days(15))),
+        Box::new(QuantidadeConstante::new(Duration::days(30))),
+        Box::new(QuantidadeConstante::new(Duration::days(90))),
+        Box::new(QuantidadeConstante::new(Duration::days(180))),
+        Box::new(ValorRealConstante::new(&inflacao, Duration::days(15))),
+        Box::new(ValorRealConstante::new(&inflacao, Duration::days(30))),
+        Box::new(ValorRealConstante::new(&inflacao, Duration::days(90))),
+        Box::new(ValorRealConstante::new(&inflacao, Duration::days(180))),
+    ];
 
     for titulo in titulos {
         println!(
@@ -31,20 +48,16 @@ fn main() {
             titulo.vencimento, titulo.inicio_dado, titulo.fim_dado
         );
 
-        let fluxo = venda_continua(titulo, titulo.inicio_dado, valor_inicio, num_meses);
-        for evento in fluxo.eventos() {
-            eprintln!("evento = {:?}", evento);
-        }
+        testar_estrategias(
+            titulo,
+            titulo.inicio_dado,
+            valor_inicio,
+            tempo_minimo,
+            &estrategias,
+        )?;
     }
 
-    println!(
-        "{}",
-        inflacao.corrigir(
-            Decimal::<2>::new(100.0),
-            NaiveDate::from_ymd_opt(2010, 1, 1).unwrap(),
-            NaiveDate::from_ymd_opt(2020, 1, 1).unwrap()
-        )
-    );
+    Ok(())
 }
 
 fn titulos_com_dados_suficientes(titulos: &[Titulo], tempo_minimo: Duration) -> Vec<&Titulo> {
@@ -52,4 +65,29 @@ fn titulos_com_dados_suficientes(titulos: &[Titulo], tempo_minimo: Duration) -> 
         .iter()
         .filter(|titulo| titulo.fim_dado - titulo.inicio_dado > tempo_minimo)
         .collect()
+}
+
+fn testar_estrategias<'a>(
+    titulo: &'a Titulo,
+    dia_inicio: NaiveDate,
+    valor_inicio: Decimal<2>,
+    periodo: Duration,
+    estrategias: &[Box<dyn Estrategia + '_>],
+) -> Result<HashMap<String, FluxoInvestimento<'a>>> {
+    let mut fluxo = FluxoInvestimento::new(titulo);
+    fluxo
+        .comprar_a_partir_de(dia_inicio, QuantidadeOuValor::Valor(valor_inicio))
+        .context("compra inicial precisa ser possível")?;
+
+    let resultados = estrategias
+        .iter()
+        .filter_map(|estrategia| {
+            let resultado = estrategia
+                .aplicar(fluxo.clone(), dia_inicio, periodo)
+                .ok()?;
+            Some((estrategia.nome(), resultado))
+        })
+        .collect();
+
+    Ok(resultados)
 }
