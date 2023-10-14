@@ -16,6 +16,7 @@ use std::collections::HashMap;
 mod decimal;
 mod estrategias;
 mod fluxo_investimento;
+mod impostos_e_taxas;
 mod inflacao;
 mod ler_titulos;
 mod quantidade_ou_valor;
@@ -23,7 +24,6 @@ mod renda_semestral;
 mod serie_temporal;
 mod tipo_titulo;
 mod titulo;
-mod impostos_e_taxas;
 
 fn main() -> Result<()> {
     let tempo_minimo = Duration::days(365 * 2);
@@ -59,21 +59,28 @@ fn main() -> Result<()> {
 
         for (nome, fluxo) in resultados {
             println!("{}", nome);
-            for evento in fluxo.eventos() {
-                println!(
-                    "{} {:?} {} {}",
-                    evento.dia, evento.tipo, evento.valor_bruto, evento.saldo_quantidade
-                );
-            }
+            // for evento in fluxo.eventos() {
+            //     println!(
+            //         "{} {:?} {} {} {}",
+            //         evento.dia,
+            //         evento.tipo,
+            //         evento.saldo_quantidade,
+            //         evento.valor_bruto,
+            //         evento.valor_liquido
+            //     );
+            // }
+
+            let renda_real = RendaReal::new(
+                &inflacao,
+                &fluxo,
+                titulo.inicio_dado + carencia,
+                titulo.inicio_dado + tempo_minimo,
+            );
 
             println!(
-                "{:?}",
-                RendaReal::new(
-                    &inflacao,
-                    &fluxo,
-                    titulo.inicio_dado,
-                    titulo.inicio_dado + tempo_minimo
-                )
+                "renda total = {} +- {}",
+                renda_real.total(),
+                renda_real.variancia()
             );
         }
     }
