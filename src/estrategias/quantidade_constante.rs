@@ -29,8 +29,8 @@ impl Estrategia for QuantidadeConstante {
     ) -> Result<FluxoInvestimento<'a>> {
         let num_vendas = periodo.num_seconds() / self.frequencia_venda.num_seconds();
 
-        for indice in 1..=num_vendas {
-            let vendas_restantes = num_vendas - indice + 1;
+        for indice in 0..num_vendas {
+            let vendas_restantes = num_vendas - indice;
             let quantidade_venda = fluxo.saldo_quantidade() / vendas_restantes as f64;
             fluxo.vender_a_partir_de(
                 dia_inicio + self.frequencia_venda * indice as i32,

@@ -6,6 +6,7 @@ use crate::fluxo_investimento::FluxoInvestimento;
 use crate::inflacao::Inflacao;
 use crate::ler_titulos::ler_titulos;
 use crate::quantidade_ou_valor::QuantidadeOuValor;
+use crate::renda_semestral::RendaReal;
 use crate::titulo::Titulo;
 use anyhow::Context;
 use anyhow::Result;
@@ -18,6 +19,7 @@ mod fluxo_investimento;
 mod inflacao;
 mod ler_titulos;
 mod quantidade_ou_valor;
+mod renda_semestral;
 mod serie_temporal;
 mod tipo_titulo;
 mod titulo;
@@ -25,6 +27,7 @@ mod titulo;
 fn main() -> Result<()> {
     let tempo_minimo = Duration::days(365 * 2);
     let valor_inicio = Decimal::<2>::new(100_000.0);
+    let carencia = Duration::days(180);
 
     let inflacao = Inflacao::baixar_com_cache();
     let titulos = ler_titulos();
@@ -49,6 +52,7 @@ fn main() -> Result<()> {
             titulo.inicio_dado,
             valor_inicio,
             tempo_minimo,
+            carencia,
             &estrategias,
         )?;
 
@@ -60,6 +64,16 @@ fn main() -> Result<()> {
                     evento.dia, evento.tipo, evento.valor, evento.saldo_quantidade
                 );
             }
+
+            println!(
+                "{:?}",
+                RendaReal::new(
+                    &inflacao,
+                    &fluxo,
+                    titulo.inicio_dado,
+                    titulo.inicio_dado + tempo_minimo
+                )
+            );
         }
     }
 
@@ -78,6 +92,7 @@ fn testar_estrategias<'a>(
     dia_inicio: NaiveDate,
     valor_inicio: Decimal<2>,
     periodo: Duration,
+    carencia: Duration,
     estrategias: &[Box<dyn Estrategia + '_>],
 ) -> Result<HashMap<String, FluxoInvestimento<'a>>> {
     let mut fluxo = FluxoInvestimento::new(titulo);
@@ -89,7 +104,7 @@ fn testar_estrategias<'a>(
         .iter()
         .filter_map(|estrategia| {
             let resultado = estrategia
-                .aplicar(fluxo.clone(), dia_inicio, periodo)
+                .aplicar(fluxo.clone(), dia_inicio + carencia, periodo - carencia)
                 .ok()?;
             Some((estrategia.nome(), resultado))
         })
